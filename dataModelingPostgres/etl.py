@@ -7,6 +7,14 @@ from sql_queries import *
 
 
 def process_song_file(cur, filepath):
+    """
+    Args
+    cur = cursor connection
+    filepath = /pth/to/file
+    -----------------------
+    Def
+    Converts the filepath file into a pandas df and inserts it to the song_table DB
+    """
     # open song file
     df = pd.read_json(filepath,lines=True)
 
@@ -22,6 +30,15 @@ def process_song_file(cur, filepath):
 
 
 def process_log_file(cur, filepath):
+   """
+    Args
+    cur = cursor connection
+    filepath = /pth/to/file
+    -----------------------
+    Def
+    Converts the filepath file into a pandas df, filters it, converts the date column to correct format and inserts data in to each (time_table,user_table,songplay_table)
+    """ 
+
     # open log file
     df = pd.read_json(filepath,lines=True)
 
@@ -59,9 +76,7 @@ def process_log_file(cur, filepath):
         cur.execute(user_table_insert, row)
 
     # insert songplay records
-    songplayID=0
     for index, row in df.iterrows():
-        songplayID+=1
         # get songid and artistid from song and artist tables
         cur.execute(song_select, (row.song, row.artist, row.length))
         results = cur.fetchone()
@@ -73,12 +88,22 @@ def process_log_file(cur, filepath):
             songid, artistid = None, None
 
         # insert songplay record
-        songplay_data = (songplayID, row.DateTime,row.userId, row.level, songid, artistid, row.sessionId, row.location, row.userAgent)
+        songplay_data = (row.DateTime,row.userId, row.level, songid, artistid, row.sessionId, row.location, row.userAgent)
         #print(songplay_data)
         cur.execute(songplay_table_insert, songplay_data)
 
 
 def process_data(cur, conn, filepath, func):
+    """
+    Args
+    cur = cursor connection
+    conn = connection to DB for commits
+    filepath = /pth/to/file
+    func = func to process file with
+    -----------------------
+    Def
+    Gets all files in the filepaths given and uses the given func to process it and then commit processed data to our DB
+    """
     # get all files matching extension from directory
     all_files = []
     for root, dirs, files in os.walk(filepath):
@@ -98,6 +123,12 @@ def process_data(cur, conn, filepath, func):
 
 
 def main():
+    """
+    Def
+    On startup all data files are processed using pandas and inserted to the DB
+    """
+    
+
     conn = psycopg2.connect("host=127.0.0.1 dbname=sparkifydb user=student password=student")
     cur = conn.cursor()
 
